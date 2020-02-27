@@ -17,9 +17,18 @@ class LogParser:
         self.msg_queue = msg_queue
         self.threads = []
 
-        self.last_line_parsed = 0 # setting this to zero will re-parse the entire log
+        self.logsize = 0
+        self.prev_logsize = 1e30000
+
+        self.loglen = 0
+        self.progress = 0.0 # 0.0-1.0, but change to 0-100 for progbar display
+
+        self.last_line_parsed = 0
         self.tag_instances = {}
         self.found = {}
+    
+    def getProgress(self):
+        return round(self.progress * 100)
 
     def getMatchCount(self):
         return len(self.found.keys())
@@ -34,19 +43,19 @@ class LogParser:
         self.stopAllThreads()
     
         self.fname = fname
-        self.last_line_parsed = 0
+        self.reset()
 
     def changeFilter(self, fil):
         self.stopAllThreads()
         
         self.filter = fil
-        self.last_line_parsed = 0
+        self.reset()
 
     def changeGranularity(self, gran):
         self.stopAllThreads()
 
         self.granularity = max(min(gran, 1.0), 0.0)
-        self.last_line_parsed = 0
+        self.reset()
     
     def generateOutputs(self):
         outputs = sorted(self.found.keys(), key=lambda k: self.found[k])
@@ -71,6 +80,12 @@ class LogParser:
 
         self.generateMessage()
 
+    def reset(self):
+        self.last_line_parsed = 0
+        self.found.clear()
+        self.tag_instances.clear()
+        self.msg_queue.put(f"Parsing entire file ({self.fname})...")
+
     def generateCSV(self):
         outputs = self.generateOutputs()
         csv = '"Count","Line ({0:.0f}% similarity)"\n'.format(self.granularity * 100)
@@ -89,15 +104,20 @@ class LogParser:
         thread.start()
 
     def parseLog(self, thread_index):
-        if self.last_line_parsed == 0:
-            self.found.clear()
-            self.tag_instances.clear()
-            self.msg_queue.put(f"Parsing entire file ({self.fname})...")
+        # reset if log is smaller, due to restarting the game
+        self.logsize = os.path.getsize(self.fname)
+        if self.logsize != 0:
+            if self.logsize < self.prev_logsize:
+                self.reset()
+            self.prev_logsize = self.logsize
 
         with open(self.fname, 'r') as f:
-            lines = f.readlines()[self.last_line_parsed:]
+            lines = f.readlines()
+            self.loglen = len(lines) - 1
+            lines = lines[self.last_line_parsed:]
 
-        for line in lines:
+        for i, line in enumerate(lines):
+            self.progress = i / self.loglen
             if self.filter.strip() == "":
                 self.parseLine(line)
             else:
@@ -144,15 +164,19 @@ class LogParser:
             self.tag_instances[tag] = {line:1}
         else:
             found_similar_line = False
-            for line_instance in self.tag_instances[tag].keys():
-                li_split = line_instance.split()
-                l_split = split[1:]
-                common = set(li_split).intersection(set(l_split))
-                if len(common) / max(len(l_split), 1) >= self.granularity:
-                    self.tag_instances[tag][line_instance] += 1
-                    line = line_instance
-                    found_similar_line = True
-                    break
+            try:
+                for line_instance in self.tag_instances[tag].keys():
+                    li_split = line_instance.split()
+                    l_split = split[1:]
+                    common = set(li_split).intersection(set(l_split))
+                    if len(common) / max(len(l_split), 1) >= self.granularity:
+                        self.tag_instances[tag][line_instance] += 1
+                        line = line_instance
+                        found_similar_line = True
+                        break
+            except:
+                self.stopAllThreads()
+                return
             if not found_similar_line:
                 self.tag_instances[tag][line] = 1
         

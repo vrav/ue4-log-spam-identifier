@@ -34,7 +34,8 @@ layout = [
         sg.Button(button_text="Clear", key="CLEAR"), \
         sg.Text("Filter:"), sg.InputCombo((settings.filter_history), key="FILTER", default_value="Error"), \
         sg.Text("Granularity:"), sg.Spin(values=gran_values, initial_value=settings.startup_granularity, key="GRANULARITY")],
-    [sg.Checkbox(text="Live Update", key="LIVE"), sg.VerticalSeparator(), sg.Text("0 matches", size=(30, 1), key="MATCHES")],
+    [sg.Checkbox(text="Live Update", key="LIVE"), sg.Text("0 matches", size=(15, 1), key="MATCHES"), \
+        sg.ProgressBar(100, orientation='h', size=(20, 16), key='PROGBAR')],
 ]
 
 # create the window and read once so we can expand given widgets on window resize
@@ -43,6 +44,7 @@ event, values = window.read(timeout=1)
 window["OUTPUT"].expand(expand_x=True, expand_y=True)
 window["FILTER"].expand(expand_x=True, expand_row=False)
 window["FILE"].expand(expand_x=True, expand_row=False)
+window["MATCHES"].expand(expand_x=True, expand_row=False)
 
 # set tooltips
 if settings.tooltips in (True, "yes", 1):
@@ -164,6 +166,11 @@ while True:
 
         matchstr = str(parser.getMatchCount()) + " matches"
         window["MATCHES"].update(matchstr)
+    
+    if msg.startswith("Parsing"):
+        window["PROGBAR"].update_bar(parser.getProgress())
+    else:
+        window["PROGBAR"].update_bar(100)
     
     previous_values = values
 
