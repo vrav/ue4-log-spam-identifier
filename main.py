@@ -24,8 +24,10 @@ tooltips = {
     "LIVE": "Continuously read the log file and update the output."
 }
 
+start_file = "" if not settings.log_file_history else settings.log_file_history[0]
+
 layout = [
-    [sg.Text("Log File:"), sg.InputCombo((settings.log_file_history), default_value=settings.log_file_history[0], size=(5, 1), key="FILE"), sg.FileBrowse(key="BROWSE", size=(6, 1))],
+    [sg.Text("Log File:"), sg.InputCombo((settings.log_file_history), default_value=start_file, size=(5, 1), key="FILE"), sg.FileBrowse(key="BROWSE", size=(6, 1))],
     [sg.Frame(title="", layout=[], key="OUTPUT")],
     [sg.Button(button_text="Update", key="UPDATE"), \
         sg.FileSaveAs(button_text="Save CSV", key="SAVE", file_types=(("*.csv", "*.csv"), ("All files", "*.*")), enable_events=True), \
@@ -36,7 +38,7 @@ layout = [
 ]
 
 # create the window and read once so we can expand given widgets on window resize
-window = sg.Window("Log Spam Indicator v0.1.0", layout, auto_size_buttons=True, resizable=True, size=(800, 600))
+window = sg.Window("Log Spam Identifier v0.1.0", layout, auto_size_buttons=True, resizable=True, size=(800, 600))
 event, values = window.read(timeout=1)
 window["OUTPUT"].expand(expand_x=True, expand_y=True)
 window["FILTER"].expand(expand_x=True, expand_row=False)
@@ -73,18 +75,31 @@ txt.bind("<1>", lambda event: txt.focus_set())
 hbar.config(command=txt.xview)
 vbar.config(command=txt.yview)
 
-parser = LogParser(values["FILE"], values["FILTER"], values["GRANULARITY"], msg_queue )
-parser.threadedParse()
+def fileNotFoundMessage(fpath):
+    msg_queue.put(f"File not found: \"{fpath}\"")
 
-previous_values = values
+def isFloat(string):
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
 
 def tryParse():
-    global live_update_last, msg, live_update_wait
+    global parser, live_update_last, msg, live_update_wait
 
     now = time.time()
-    if not msg.startswith("Parsing") and live_update_last + live_update_wait < now:
+    if (not parser.threads or not msg.startswith("Parsing")) and live_update_last + live_update_wait < now:
         parser.threadedParse()
         live_update_last = now
+
+parser = LogParser(values["FILE"], values["FILTER"], values["GRANULARITY"], msg_queue )
+if not os.path.isfile(values["FILE"]):
+    fileNotFoundMessage(values["FILE"])
+else:
+    parser.threadedParse()
+
+previous_values = values
 
 while True:
     event, values = window.read(timeout=10)
@@ -94,7 +109,8 @@ while True:
         if not msg.startswith("Parsing"):
             parser.clear()
     elif event == "UPDATE":
-        tryParse()
+        parser.stopAllThreads()
+        parser.threadedParse()
 
     if values["SAVE"]:
         print(f"Saving CSV to: {values['SAVE']}")
@@ -118,12 +134,22 @@ while True:
             
             parser.changeFile(fname)
             needs_update = True
+        else:
+            fileNotFoundMessage(values["FILE"])
+    
     if values["FILTER"] != previous_values["FILTER"]:
         parser.changeFilter(values["FILTER"])
         needs_update = True
+    
     if values["GRANULARITY"] != previous_values["GRANULARITY"]:
-        parser.changeGranularity(values["GRANULARITY"])
-        needs_update = True
+        gran = values["GRANULARITY"]
+        if isFloat(gran):
+            gran = min(max(float(gran), 0.0), 1.0)
+            print(gran)
+            window["GRANULARITY"].update(gran)
+            parser.changeGranularity(gran)
+            needs_update = True
+    
     if needs_update or values["LIVE"]:
         tryParse()
     

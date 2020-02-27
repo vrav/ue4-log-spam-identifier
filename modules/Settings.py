@@ -4,7 +4,7 @@ config_filename = "settings.json"
 
 default_settings = {
     "startup_granularity": 1.0,
-    "log_file_history": [],
+    "log_file_history": [""],
     "filter_history": ["Error", "Warning", "Error OR Warning"],
     "tooltips": "yes"
 }
