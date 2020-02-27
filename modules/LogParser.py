@@ -92,7 +92,7 @@ class LogParser:
         if self.last_line_parsed == 0:
             self.found.clear()
             self.tag_instances.clear()
-            self.msg_queue.put(f"Parsing entire log ({self.fname})...")
+            self.msg_queue.put(f"Parsing entire file ({self.fname})...")
 
         with open(self.fname, 'r') as f:
             lines = f.readlines()[self.last_line_parsed:]

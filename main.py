@@ -78,14 +78,23 @@ parser.threadedParse()
 
 previous_values = values
 
+def tryParse():
+    global live_update_last, msg, live_update_wait
+
+    now = time.time()
+    if not msg.startswith("Parsing") and live_update_last + live_update_wait < now:
+        parser.threadedParse()
+        live_update_last = now
+
 while True:
     event, values = window.read(timeout=10)
     if event in (None, 'Quit'):
         break
     elif event == "CLEAR":
-        parser.clear()
+        if not msg.startswith("Parsing"):
+            parser.clear()
     elif event == "UPDATE":
-        parser.threadedParse()
+        tryParse()
 
     if values["SAVE"]:
         print(f"Saving CSV to: {values['SAVE']}")
@@ -116,10 +125,7 @@ while True:
         parser.changeGranularity(values["GRANULARITY"])
         needs_update = True
     if needs_update or values["LIVE"]:
-        now = time.time()
-        if not msg.startswith("Parsing") and live_update_last + live_update_wait < now:
-            parser.threadedParse()
-            live_update_last = now
+        tryParse()
     
     if not msg_queue.empty():
         msg = msg_queue.get_nowait()
