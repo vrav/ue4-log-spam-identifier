@@ -36,7 +36,7 @@ layout = [
 ]
 
 # create the window and read once so we can expand given widgets on window resize
-window = sg.Window("Log Spam Indicator v0.1.0", layout, auto_size_buttons=True, resizable=True, size=(640, 480))
+window = sg.Window("Log Spam Indicator v0.1.0", layout, auto_size_buttons=True, resizable=True, size=(800, 600))
 event, values = window.read(timeout=1)
 window["OUTPUT"].expand(expand_x=True, expand_y=True)
 window["FILTER"].expand(expand_x=True, expand_row=False)
@@ -100,11 +100,13 @@ while True:
     if values["FILE"] != previous_values["FILE"]:
         fname = values["FILE"]
         if os.path.isfile(fname):
-            # if new, prepend to log file history and save settings
-            if fname not in settings.log_file_history:
-                settings.log_file_history.insert(0, fname)
-                settings.saveFile()
-                window["FILE"].Widget.config(values=settings.log_file_history)
+            # if extant, remove from list so we can re-add at the top
+            if fname in settings.log_file_history:
+                settings.log_file_history.remove(fname)
+            settings.log_file_history.insert(0, fname)
+            settings.saveFile()
+            window["FILE"].Widget.config(values=settings.log_file_history)
+            
             parser.changeFile(fname)
             needs_update = True
     if values["FILTER"] != previous_values["FILTER"]:
