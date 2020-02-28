@@ -12,7 +12,7 @@ sg.theme("LightGrey1")
 
 msg = ""
 live_update_last = time.time()
-live_update_wait = 0.1 # seconds
+live_update_wait = 0.5 # seconds
 gran_values = [i/10 for i in range(0, 11)]
 
 tooltips = {
@@ -147,7 +147,6 @@ while True:
         gran = values["GRANULARITY"]
         if isFloat(gran):
             gran = min(max(float(gran), 0.0), 1.0)
-            print(gran)
             window["GRANULARITY"].update(gran)
             parser.changeGranularity(gran)
             needs_update = True
