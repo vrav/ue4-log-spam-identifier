@@ -165,18 +165,29 @@ class LogParser:
         else:
             found_similar_line = False
             try:
-                for line_instance in self.tag_instances[tag].keys():
-                    li_split = line_instance.split()
-                    l_split = split[1:]
-                    common = set(li_split).intersection(set(l_split))
-                    if len(common) / max(len(l_split), 1) >= self.granularity:
-                        self.tag_instances[tag][line_instance] += 1
-                        line = line_instance
-                        found_similar_line = True
-                        break
+                l_split = split[1:]
+
+                if self.granularity == 1.0:
+                    for line_instance in self.tag_instances[tag].keys():
+                        li_split = line_instance.split()
+                        if li_split == l_split:
+                            self.tag_instances[tag][line_instance] += 1
+                            line = line_instance
+                            found_similar_line = True
+                            break
+                else:
+                    for line_instance in self.tag_instances[tag].keys():
+                        li_split = line_instance.split()
+                        common = set(li_split).intersection(set(l_split))
+                        if len(common) / max(len(l_split), 1) >= self.granularity:
+                            self.tag_instances[tag][line_instance] += 1
+                            line = line_instance
+                            found_similar_line = True
+                            break
             except:
                 self.stopAllThreads()
                 return
+            
             if not found_similar_line:
                 self.tag_instances[tag][line] = 1
         

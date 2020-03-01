@@ -119,7 +119,7 @@ while True:
         parser.threadedParse()
 
     if values["SAVE"]:
-        print(f"Saving CSV to: {values['SAVE']}")
+        # print(f"Saving CSV to: {values['SAVE']}")
 
         with open(values["SAVE"], "w") as f:
             f.write(parser.generateCSV())
@@ -155,7 +155,6 @@ while True:
             needs_update = True
     
     if needs_update or values["LIVE"]:
-        print(values["FILTER"])
         tryParse()
     
     if not msg_queue.empty():
