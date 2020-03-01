@@ -14,6 +14,7 @@ msg = ""
 live_update_last = time.time()
 live_update_wait = 0.5 # seconds
 gran_values = [i/10 for i in range(0, 11)]
+needs_update = False
 
 tooltips = {
     "UPDATE": "Update the output to the file's current state.",
@@ -88,12 +89,15 @@ def isFloat(string):
         return False
 
 def tryParse():
-    global parser, live_update_last, msg, live_update_wait
+    global needs_update, parser, live_update_last, msg, live_update_wait
 
     now = time.time()
     if (not parser.threads or not msg.startswith("Parsing")) and live_update_last + live_update_wait < now:
         parser.threadedParse()
         live_update_last = now
+        needs_update = False
+    else:
+        needs_update = True
 
 parser = LogParser(values["FILE"], values["FILTER"], values["GRANULARITY"], msg_queue )
 if not os.path.isfile(values["FILE"]):
@@ -123,7 +127,6 @@ while True:
         # reset the string var so we only save once
         window["SAVE"].TKStringVar.set("")
 
-    needs_update = False
     if values["FILE"] != previous_values["FILE"]:
         fname = values["FILE"]
         if os.path.isfile(fname):
@@ -152,6 +155,7 @@ while True:
             needs_update = True
     
     if needs_update or values["LIVE"]:
+        print(values["FILTER"])
         tryParse()
     
     if not msg_queue.empty():
