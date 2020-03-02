@@ -30,13 +30,13 @@ tooltips = {
 start_file = "" if not settings.log_file_history else settings.log_file_history[0]
 
 layout = [
-    [sg.Text("Log File:"), sg.InputCombo((settings.log_file_history), default_value=start_file, size=(5, 1), key="FILE"), sg.FileBrowse(key="BROWSE", size=(6, 1))],
+    [sg.Text("Log File:", pad=(0,0)), sg.InputCombo((settings.log_file_history), default_value=start_file, size=(5, 1), key="FILE"), sg.FileBrowse(key="BROWSE", size=(6, 1))],
     [sg.Frame(title="", layout=[], key="OUTPUT")],
     [sg.Button(button_text="Update", key="UPDATE"), \
         sg.FileSaveAs(button_text="Save CSV", key="SAVE", file_types=(("*.csv", "*.csv"), ("All files", "*.*")), enable_events=True), \
         sg.Button(button_text="Clear", key="CLEAR"), \
-        sg.Text("Filter:"), sg.InputCombo((settings.filter_history), key="FILTER", default_value="Error"), \
-        sg.Text("Granularity:"), sg.Spin(values=gran_values, initial_value=settings.startup_granularity, key="GRANULARITY")],
+        sg.Text("Filter:", pad=(0,0)), sg.InputCombo((settings.filter_history), key="FILTER", default_value="Error"), \
+        sg.Text("Similarity:", pad=(0,0)), sg.Spin(values=gran_values, initial_value=settings.startup_granularity, key="GRANULARITY")],
     [sg.Checkbox(text="Live Update", key="LIVE"), sg.Text("0 matches", size=(15, 1), key="MATCHES"), \
         sg.ProgressBar(100, orientation='h', size=(20, 16), key='PROGBAR')],
 ]
