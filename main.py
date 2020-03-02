@@ -4,6 +4,8 @@ import PySimpleGUI as sg
 from modules.Settings import Settings
 from modules.LogParser import LogParser
 
+version = "0.1.1"
+
 base_dir = os.path.dirname(os.path.realpath(__file__))
 settings = Settings(base_dir)
 msg_queue = queue.Queue()
@@ -40,7 +42,7 @@ layout = [
 ]
 
 # create the window and read once so we can expand given widgets on window resize
-window = sg.Window("Log Spam Identifier v0.1.0", layout, auto_size_buttons=True, resizable=True, size=(800, 600))
+window = sg.Window("Log Spam Identifier v%s"%version, layout, auto_size_buttons=True, resizable=True, size=(800, 600))
 event, values = window.read(timeout=1)
 window["OUTPUT"].expand(expand_x=True, expand_y=True)
 window["FILTER"].expand(expand_x=True, expand_row=False)
