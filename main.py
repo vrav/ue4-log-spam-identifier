@@ -150,7 +150,6 @@ while True:
         gran = values["GRANULARITY"]
         if isFloat(gran):
             gran = min(max(float(gran), 0.0), 1.0)
-            window["GRANULARITY"].update(gran)
             parser.changeGranularity(gran)
             needs_update = True
     
